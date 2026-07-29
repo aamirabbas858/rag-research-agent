@@ -111,6 +111,50 @@ project ran on Gemini alone until its balance emptied, at which point every
 request returned RESOURCE_EXHAUSTED and nothing worked. Nothing about the
 agent was wrong; it just had exactly one provider.
 
+## Writing the loop, then rebuilding it
+
+The hand-written version is a `for` loop with the decision, the tool call, the
+step budget and the transcript interleaved. Everything is visible in the order
+it happens, which is genuinely easier to read — and it also means those four
+concerns cannot be changed independently.
+
+The LangGraph version separates them into nodes over a shared state:
+
+```
+decide ──► act ──► record ──► decide ──► ... ──► end
+```
+
+`decide` asks the model what to do next, `act` runs the chosen tool, and a
+conditional edge sends control back or ends the run. The step budget is a
+field in the state rather than a loop counter, so nothing has to remember to
+decrement it.
+
+**Is the framework worth it here? For a loop this small, not obviously.** It
+is more files, more concepts and a dependency that moves quickly, in exchange
+for structure the eighty-line version did not need.
+
+What it buys is what comes next. The agent's whole memory is now a value
+rather than local variables inside one function — so it can be inspected,
+logged, saved between runs, or handed to a second agent. Persistence,
+resuming a half-finished research session, and a human approval step before an
+expensive tool are all hard to bolt onto a `for` loop and close to free on a
+graph.
+
+Both are in the repository because the comparison is the interesting part.
+
+The graph has tests the loop never had, and they run without a model:
+
+```bash
+venv/bin/python tests/test_agent_graph.py
+```
+
+Six checks on control flow — that a tool result loops back for another
+decision, that `final_answer` ends the run, that an invented tool name is an
+error rather than a crash, that a failing tool is reported to the model
+instead of ending the run, and that the step budget stops an agent which never
+decides to finish. Stubbing the model is what makes them fast, deterministic
+and free.
+
 ## Known limits
 
 - Retrieval quality isn't measured. There's no ground-truth set here, so treat answer
@@ -128,12 +172,18 @@ agent was wrong; it just had exactly one provider.
 
 ## Stack
 
-Python · Mistral (`mistral-small-latest` + `mistral-embed`), Gemini as
-fallback · ChromaDB · Tavily · Streamlit
+Python · LangGraph · Mistral (`mistral-small-latest` + `mistral-embed`),
+Gemini as fallback · ChromaDB · Tavily · Streamlit
 
-No agent framework. The ReAct loop, the tool dispatch and the stopping
-condition are about eighty lines of plain Python — the point of the project
-was to write them, not to configure them.
+Two implementations of the same agent, kept side by side:
+
+| | |
+|---|---|
+| `src/agent_manual.py` | the ReAct loop written by hand, one function |
+| `src/agent_graph.py` | the same loop as a LangGraph state machine |
+
+They yield identical step dictionaries, so the UI cannot tell them apart.
+Switch with `AGENT_IMPL=manual` or `AGENT_IMPL=graph` (the default).
 
 ---
 
