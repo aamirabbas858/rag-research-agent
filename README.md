@@ -7,7 +7,7 @@ Not a chatbot with retrieval bolted on. The model is given three tools and a run
 history, and at each step it chooses what to do next. The interesting part isn't
 getting it to act — it's getting it to **stop**.
 
-![Stack](https://img.shields.io/badge/Python-3.11+-blue) ![Stack](https://img.shields.io/badge/Gemini-API-orange) ![Stack](https://img.shields.io/badge/ChromaDB-vector%20store-green) ![Stack](https://img.shields.io/badge/Tavily-web%20search-purple)
+![Stack](https://img.shields.io/badge/Python-3.11+-blue) ![Stack](https://img.shields.io/badge/Mistral-API-orange) ![Stack](https://img.shields.io/badge/ChromaDB-vector%20store-green) ![Stack](https://img.shields.io/badge/Tavily-web%20search-purple)
 
 ---
 
@@ -102,8 +102,14 @@ cp .env.example .env          # add your keys
 streamlit run app.py
 ```
 
-Needs a [Gemini API key](https://aistudio.google.com/apikey) and a
-[Tavily key](https://tavily.com) — both have free tiers.
+Needs a [Mistral key](https://console.mistral.ai) (free tier, no card — phone
+verification only) and a [Tavily key](https://tavily.com).
+
+`GEMINI_API_KEY` still works as a fallback if you have one. The agent uses the
+first provider with a key present and only fails when none answer — this
+project ran on Gemini alone until its balance emptied, at which point every
+request returned RESOURCE_EXHAUSTED and nothing worked. Nothing about the
+agent was wrong; it just had exactly one provider.
 
 ## Known limits
 
@@ -114,10 +120,20 @@ Needs a [Gemini API key](https://aistudio.google.com/apikey) and a
   an earlier question's articles. Useful in practice, but it means runs aren't isolated.
 - One agent, three tools, no parallel execution and no human approval step.
 - Chunking is fixed-size with overlap, not semantic.
+- **Switching embedding model invalidates the store.** Vectors from two models
+  have different lengths and different meanings, and querying across them does
+  not error — it silently returns the wrong chunks and the answer on top looks
+  fine. The collection name carries the model for that reason, so changing it
+  gives a fresh collection rather than a corrupted one.
 
 ## Stack
 
-Python · Gemini API (generation + `gemini-embedding-2`) · ChromaDB · Tavily · Streamlit
+Python · Mistral (`mistral-small-latest` + `mistral-embed`), Gemini as
+fallback · ChromaDB · Tavily · Streamlit
+
+No agent framework. The ReAct loop, the tool dispatch and the stopping
+condition are about eighty lines of plain Python — the point of the project
+was to write them, not to configure them.
 
 ---
 

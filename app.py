@@ -35,7 +35,7 @@ with st.sidebar:
     3. **Retrieving** the most relevant chunks
     4. **Answering** with citations
 
-    Built with **LangChain · ChromaDB · Gemini · Tavily**
+    Built with **ChromaDB · Mistral · Tavily** — no agent framework
     """)
     st.divider()
     st.markdown("**How it works:**")

@@ -20,52 +20,24 @@ import chromadb
 from dotenv import load_dotenv
 from tavily import TavilyClient
 
+from providers import EMBED_MODEL, call_llm, embed_text
+
 load_dotenv()
-GEMINI_API_KEY = os.getenv("GEMINI_API_KEY")
 TAVILY_API_KEY = os.getenv("TAVILY_API_KEY")
 
 tavily = TavilyClient(api_key=TAVILY_API_KEY)
 
 db_client = chromadb.EphemeralClient()
-collection = db_client.get_or_create_collection(name="app_knowledge_base")
+# The embedding model is part of the collection name on purpose. Vectors from
+# two different models have different lengths and different meanings, and
+# mixing them does not raise — it silently retrieves the wrong chunks. Changing
+# the model gives a fresh collection rather than a corrupted one.
+collection = db_client.get_or_create_collection(name=f"app_kb_{EMBED_MODEL}")
 
 
 # ─────────────────────────────────────────────
 # HELPERS
 # ─────────────────────────────────────────────
-
-def embed_text(text: str) -> list[float]:
-    url = (
-        "https://generativelanguage.googleapis.com"
-        f"/v1beta/models/gemini-embedding-2:embedContent?key={GEMINI_API_KEY}"
-    )
-    r = requests.post(
-        url,
-        json={"content": {"parts": [{"text": text}]}},
-        timeout=15,
-    )
-    r.raise_for_status()
-    return r.json()["embedding"]["values"]
-
-
-def call_gemini(prompt: str) -> str:
-    models = ["gemini-3.5-flash", "gemini-3.1-flash-lite", "gemini-flash-latest"]
-    for model in models:
-        url = (
-            "https://generativelanguage.googleapis.com"
-            f"/v1beta/models/{model}:generateContent?key={GEMINI_API_KEY}"
-        )
-        r = requests.post(
-            url,
-            json={"contents": [{"role": "user", "parts": [{"text": prompt}]}]},
-            timeout=90,
-        )
-        if r.status_code == 503:
-            continue
-        r.raise_for_status()
-        return r.json()["candidates"][0]["content"]["parts"][0]["text"]
-    raise RuntimeError("All Gemini models temporarily unavailable.")
-
 
 def split_into_chunks(text: str, size: int = 500, overlap: int = 100) -> list[str]:
     chunks, start = [], 0
@@ -173,7 +145,7 @@ def run_agent(question: str):
         )
         prompt = f"{SYSTEM_PROMPT}\n\n{history}\nWhat do you do next?{urgency}"
 
-        raw = call_gemini(prompt)
+        raw = call_llm(prompt)
         clean = raw.strip().strip("```json").strip("```").strip()
 
         try:
