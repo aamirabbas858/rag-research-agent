@@ -102,8 +102,13 @@ cp .env.example .env          # add your keys
 streamlit run app.py
 ```
 
-Needs a [Mistral key](https://console.mistral.ai) (free tier, no card — phone
-verification only) and a [Tavily key](https://tavily.com).
+Needs one model key and a [Tavily key](https://tavily.com). Either works, and
+both are free without a card:
+
+| | |
+|---|---|
+| `NVIDIA_API_KEY` | [build.nvidia.com](https://build.nvidia.com) — tried first |
+| `MISTRAL_API_KEY` | [console.mistral.ai](https://console.mistral.ai) — phone verification |
 
 `GEMINI_API_KEY` still works as a fallback if you have one. The agent uses the
 first provider with a key present and only fails when none answer — this
@@ -172,8 +177,8 @@ and free.
 
 ## Stack
 
-Python · LangGraph · Mistral (`mistral-small-latest` + `mistral-embed`),
-Gemini as fallback · ChromaDB · Tavily · Streamlit
+Python · LangGraph · NVIDIA NIM (`llama-3.3-70b` + `nv-embedqa-e5-v5`),
+Mistral and Gemini as fallbacks · ChromaDB · Tavily · Streamlit
 
 Two implementations of the same agent, kept side by side:
 

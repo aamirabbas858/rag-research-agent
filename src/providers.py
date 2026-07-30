@@ -26,25 +26,46 @@ import os
 
 import requests
 
+NVIDIA_API_KEY = os.getenv("NVIDIA_API_KEY")
 MISTRAL_API_KEY = os.getenv("MISTRAL_API_KEY")
 GEMINI_API_KEY = os.getenv("GEMINI_API_KEY")
 
 # Sent to the outside world as part of the collection name, so it must stay
 # short and filesystem-safe.
-EMBED_MODEL = "mistral-embed" if MISTRAL_API_KEY else "gemini-embedding-2"
+if NVIDIA_API_KEY:
+    EMBED_MODEL = "nv-embedqa-e5-v5"
+elif MISTRAL_API_KEY:
+    EMBED_MODEL = "mistral-embed"
+else:
+    EMBED_MODEL = "gemini-embedding-2"
 
 
 class NoProviderConfigured(RuntimeError):
     def __init__(self) -> None:
         super().__init__(
-            "No model provider configured. Set MISTRAL_API_KEY (free tier, no card) "
-            "or GEMINI_API_KEY in your .env"
+            "No model provider configured. Set NVIDIA_API_KEY or MISTRAL_API_KEY "
+            "(both free, no card) in your .env"
         )
 
 
 # ─────────────────────────────────────────────────────────────
 # CHAT
 # ─────────────────────────────────────────────────────────────
+
+def _nvidia_chat(prompt: str) -> str:
+    r = requests.post(
+        "https://integrate.api.nvidia.com/v1/chat/completions",
+        headers={"Authorization": f"Bearer {NVIDIA_API_KEY}"},
+        json={
+            "model": "meta/llama-3.3-70b-instruct",
+            "messages": [{"role": "user", "content": prompt}],
+            "temperature": 0,
+        },
+        timeout=90,
+    )
+    r.raise_for_status()
+    return r.json()["choices"][0]["message"]["content"]
+
 
 def _mistral_chat(prompt: str) -> str:
     r = requests.post(
@@ -85,6 +106,7 @@ def call_llm(prompt: str) -> str:
     errors: list[str] = []
 
     for name, key, fn in (
+        ("nvidia", NVIDIA_API_KEY, _nvidia_chat),
         ("mistral", MISTRAL_API_KEY, _mistral_chat),
         ("gemini", GEMINI_API_KEY, _gemini_chat),
     ):
@@ -104,15 +126,35 @@ def call_llm(prompt: str) -> str:
 # EMBEDDINGS
 # ─────────────────────────────────────────────────────────────
 
-def embed_text(text: str) -> list[float]:
+def embed_text(text: str, kind: str = "passage") -> list[float]:
     """
     One vector for one piece of text.
+
+    `kind` is "passage" for text being stored and "query" for a question being
+    asked. NVIDIA's retrieval embedders are trained asymmetrically and expect
+    to be told which — passing the wrong one costs real retrieval quality and
+    reports no error at all. The other providers ignore it.
 
     No failover here, deliberately. Falling back to a different embedding
     model mid-collection would put vectors of two different shapes and
     meanings into the same store, and the resulting nonsense would be silent.
     Better to fail loudly than to retrieve confidently wrong chunks.
     """
+    if NVIDIA_API_KEY:
+        r = requests.post(
+            "https://integrate.api.nvidia.com/v1/embeddings",
+            headers={"Authorization": f"Bearer {NVIDIA_API_KEY}"},
+            json={
+                "model": "nvidia/nv-embedqa-e5-v5",
+                "input": [text],
+                "input_type": kind,
+                "encoding_format": "float",
+            },
+            timeout=30,
+        )
+        r.raise_for_status()
+        return r.json()["data"][0]["embedding"]
+
     if MISTRAL_API_KEY:
         r = requests.post(
             "https://api.mistral.ai/v1/embeddings",

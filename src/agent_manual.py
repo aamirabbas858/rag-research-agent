@@ -88,7 +88,9 @@ def tool_query_knowledge_base(question: str) -> tuple[str, list[dict]]:
     if collection.count() == 0:
         return "Knowledge base is empty. Search the web first.", []
     results = collection.query(
-        query_embeddings=[embed_text(question)],
+        # A question, not a stored chunk — NVIDIA's retriever is trained
+        # asymmetrically and gives worse results if told the wrong one.
+        query_embeddings=[embed_text(question, kind="query")],
         n_results=4,
         include=["documents", "metadatas"],
     )
