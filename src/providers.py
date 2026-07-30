@@ -95,18 +95,37 @@ class NoProviderConfigured(RuntimeError):
 # ─────────────────────────────────────────────────────────────
 
 def _nvidia_chat(prompt: str) -> str:
-    r = requests.post(
-        "https://integrate.api.nvidia.com/v1/chat/completions",
-        headers={"Authorization": f"Bearer {NVIDIA_API_KEY}"},
-        json={
-            "model": "meta/llama-3.3-70b-instruct",
-            "messages": [{"role": "user", "content": prompt}],
-            "temperature": 0,
-        },
-        timeout=90,
-    )
-    r.raise_for_status()
-    return r.json()["choices"][0]["message"]["content"]
+    """NVIDIA NIM, OpenAI-compatible.
+
+    temperature is 0.01 rather than 0. Several NIM models reject exactly zero
+    as out of range, and the request that works in another project of mine
+    against this same endpoint uses a non-zero value — near-zero keeps the
+    determinism that matters for a judge without tripping the validator.
+
+    max_tokens is set explicitly because the default varies by model, and a
+    judge that gets truncated mid-number scores nothing at all.
+    """
+    last = ""
+    for model in ("meta/llama-3.3-70b-instruct", "nvidia/llama-3.3-nemotron-super-49b-v1.5"):
+        r = requests.post(
+            "https://integrate.api.nvidia.com/v1/chat/completions",
+            headers={"Authorization": f"Bearer {NVIDIA_API_KEY}"},
+            json={
+                "model": model,
+                "messages": [{"role": "user", "content": prompt}],
+                "temperature": 0.01,
+                "max_tokens": 1024,
+            },
+            timeout=90,
+        )
+        if r.status_code == 200:
+            return r.json()["choices"][0]["message"]["content"]
+        # Keep the body: NVIDIA explains refusals there, and raise_for_status
+        # throws it away, which is how this failure stayed opaque.
+        last = f"{model} -> HTTP {r.status_code}: {r.text[:200]}"
+        if r.status_code in (401, 403):
+            break   # a rejected key will reject the next model too
+    raise RuntimeError(last or "nvidia: no response")
 
 
 def _mistral_chat(prompt: str) -> str:
