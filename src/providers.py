@@ -41,12 +41,18 @@ def _key(name: str) -> str | None:
     used by scripts that have nothing to do with Streamlit and should not
     require it installed.
     """
+    # Stripped, always. A key pasted into a secrets box or an .env file
+    # routinely carries a trailing newline or space, and it goes straight into
+    # an Authorization header — where "Bearer key\n" is rejected as 403
+    # Forbidden, indistinguishable from a genuinely invalid key. The character
+    # doing the damage is invisible in every UI that shows it back to you.
     value = os.getenv(name)
-    if value:
-        return value
+    if value and value.strip():
+        return value.strip()
     try:
         import streamlit as st
-        return st.secrets.get(name) or None
+        secret = st.secrets.get(name)
+        return secret.strip() if secret and secret.strip() else None
     except Exception:
         return None
 
