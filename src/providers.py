@@ -24,6 +24,7 @@ model and you get a new, empty collection instead of a corrupted old one.
 
 from __future__ import annotations
 
+import json
 import os
 
 import requests
@@ -101,36 +102,74 @@ class NoProviderConfigured(RuntimeError):
 # ─────────────────────────────────────────────────────────────
 
 def _nvidia_chat(prompt: str) -> str:
-    """NVIDIA NIM, OpenAI-compatible.
+    """NVIDIA NIM, OpenAI-compatible, streamed.
 
-    temperature is 0.01 rather than 0. Several NIM models reject exactly zero
-    as out of range, and the request that works in another project of mine
-    against this same endpoint uses a non-zero value — near-zero keeps the
-    determinism that matters for a judge without tripping the validator.
+    Streaming is not a nicety here — it is the fix. A non-streamed request
+    returns the whole completion in one response, so the read timeout has to
+    cover the entire generation. On a busy free endpoint that regularly exceeds
+    90 seconds, and the failure arrives as "Read timed out" with no clue that
+    the request was fine and merely slow.
 
-    max_tokens is set explicitly because the default varies by model, and a
-    judge that gets truncated mid-number scores nothing at all.
+    Streamed, the read timeout only has to cover the gap between chunks, which
+    is a fraction of a second once generation starts. The same call in another
+    project of mine has streamed against this endpoint for weeks without a
+    timeout; this one did not, and that was the whole difference.
+
+    Models are tried largest first and fall through on timeout, so a slow
+    endpoint degrades to a faster, smaller model rather than to nothing.
     """
     last = ""
-    for model in ("meta/llama-3.3-70b-instruct", "nvidia/llama-3.3-nemotron-super-49b-v1.5"):
-        r = requests.post(
-            "https://integrate.api.nvidia.com/v1/chat/completions",
-            headers={"Authorization": f"Bearer {NVIDIA_API_KEY}"},
-            json={
-                "model": model,
-                "messages": [{"role": "user", "content": prompt}],
-                "temperature": 0.01,
-                "max_tokens": 1024,
-            },
-            timeout=90,
-        )
-        if r.status_code == 200:
-            return r.json()["choices"][0]["message"]["content"]
-        # Keep the body: NVIDIA explains refusals there, and raise_for_status
-        # throws it away, which is how this failure stayed opaque.
-        last = f"{model} -> HTTP {r.status_code}: {r.text[:200]}"
-        if r.status_code in (401, 403):
-            break   # a rejected key will reject the next model too
+    for model in (
+        "meta/llama-3.3-70b-instruct",
+        "nvidia/llama-3.3-nemotron-super-49b-v1.5",
+        "meta/llama-3.1-8b-instruct",
+    ):
+        try:
+            with requests.post(
+                "https://integrate.api.nvidia.com/v1/chat/completions",
+                headers={"Authorization": f"Bearer {NVIDIA_API_KEY}"},
+                json={
+                    "model": model,
+                    "messages": [{"role": "user", "content": prompt}],
+                    "temperature": 0.01,
+                    "max_tokens": 1024,
+                    "stream": True,
+                },
+                # (connect, read). The read budget now covers the pause between
+                # chunks rather than the whole generation.
+                timeout=(10, 60),
+                stream=True,
+            ) as r:
+                if r.status_code != 200:
+                    last = f"{model} -> HTTP {r.status_code}: {r.text[:200]}"
+                    if r.status_code in (401, 403):
+                        break
+                    continue
+
+                parts: list[str] = []
+                for line in r.iter_lines(decode_unicode=True):
+                    if not line or not line.startswith("data:"):
+                        continue
+                    payload = line[5:].strip()
+                    if payload == "[DONE]":
+                        break
+                    try:
+                        delta = json.loads(payload)["choices"][0]["delta"]
+                    except (json.JSONDecodeError, KeyError, IndexError):
+                        continue    # a partial frame; the next chunk completes it
+                    if delta.get("content"):
+                        parts.append(delta["content"])
+
+                text = "".join(parts).strip()
+                if text:
+                    return text
+                last = f"{model} -> empty stream"
+        except requests.exceptions.Timeout:
+            # Slow, not broken. The next model is smaller and faster.
+            last = f"{model} -> timed out between chunks"
+        except requests.exceptions.RequestException as e:
+            last = f"{model} -> {type(e).__name__}: {str(e)[:120]}"
+
     raise RuntimeError(last or "nvidia: no response")
 
 
