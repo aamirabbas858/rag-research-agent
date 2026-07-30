@@ -1,6 +1,8 @@
 """
 providers.py — where the model calls actually go.
 
+
+
 This project ran entirely on Gemini until its prepaid balance emptied, at
 which point every request returned RESOURCE_EXHAUSTED and the app stopped
 working. Nothing about the agent was wrong; it just had exactly one provider.
@@ -26,9 +28,32 @@ import os
 
 import requests
 
-NVIDIA_API_KEY = os.getenv("NVIDIA_API_KEY")
-MISTRAL_API_KEY = os.getenv("MISTRAL_API_KEY")
-GEMINI_API_KEY = os.getenv("GEMINI_API_KEY")
+
+def _key(name: str) -> str | None:
+    """A key from the environment, or from Streamlit's secret store.
+
+    Reading os.getenv alone is not enough. On Streamlit Cloud, secrets live in
+    st.secrets, and relying on them also appearing as environment variables is
+    an assumption — one that produced "No provider configured" on a deployment
+    where the key was set correctly the whole time.
+
+    streamlit is imported lazily and inside a try, because this module is also
+    used by scripts that have nothing to do with Streamlit and should not
+    require it installed.
+    """
+    value = os.getenv(name)
+    if value:
+        return value
+    try:
+        import streamlit as st
+        return st.secrets.get(name) or None
+    except Exception:
+        return None
+
+
+NVIDIA_API_KEY = _key("NVIDIA_API_KEY")
+MISTRAL_API_KEY = _key("MISTRAL_API_KEY")
+GEMINI_API_KEY = _key("GEMINI_API_KEY")
 
 # Sent to the outside world as part of the collection name, so it must stay
 # short and filesystem-safe.
@@ -41,10 +66,27 @@ else:
 
 
 class NoProviderConfigured(RuntimeError):
+    """Raised when no key was found anywhere.
+
+    The message names what was looked for and where, because the version that
+    just said "no provider configured" sent someone checking a secret that was
+    already set correctly. It reports presence only — never a key, never a
+    prefix, never a length.
+    """
+
     def __init__(self) -> None:
+        looked = {
+            "NVIDIA_API_KEY": bool(NVIDIA_API_KEY),
+            "MISTRAL_API_KEY": bool(MISTRAL_API_KEY),
+            "GEMINI_API_KEY": bool(GEMINI_API_KEY),
+        }
+        found = ", ".join(k for k, v in looked.items() if v) or "none"
         super().__init__(
-            "No model provider configured. Set NVIDIA_API_KEY or MISTRAL_API_KEY "
-            "(both free, no card) in your .env"
+            "No model provider configured.\n"
+            f"  checked (env, then st.secrets): {', '.join(looked)}\n"
+            f"  found: {found}\n"
+            "  Names are case-sensitive. Set NVIDIA_API_KEY or MISTRAL_API_KEY "
+            "— both are free and need no card."
         )
 
 
