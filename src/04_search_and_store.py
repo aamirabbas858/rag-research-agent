@@ -1,5 +1,5 @@
 """
-STEP 4 — Web Search + Store in ChromaDB
+STEP 4 - Web Search + Store in ChromaDB
 =========================================
 What this file does:
   - Takes a research topic from you
@@ -9,7 +9,7 @@ What this file does:
   - Embeds each chunk and stores it in ChromaDB
 
 After running this, you have a knowledge base built
-from real, live web content — not fake text we typed.
+from real, live web content - not fake text we typed.
 
 In the final agent, this whole process will run
 automatically when you give it a research topic.
@@ -66,7 +66,7 @@ def embed_text(text: str) -> list[float]:
 # Example of overlap:
 #   Chunk 1: "...the model uses attention. This allows it to..."
 #   Chunk 2: "This allows it to process long sequences..."
-#             ↑ repeated from chunk 1 — keeps context intact
+#             ↑ repeated from chunk 1 - keeps context intact
 
 def split_into_chunks(text: str, chunk_size: int = 500, overlap: int = 100) -> list[str]:
     chunks = []
@@ -88,7 +88,7 @@ db_path = os.path.join(os.path.dirname(__file__), "..", "data", "chroma_main")
 db_client = chromadb.PersistentClient(path=db_path)
 
 # We use get_or_create so the collection persists
-# across multiple runs — new searches ADD to it,
+# across multiple runs - new searches ADD to it,
 # they don't overwrite it
 collection = db_client.get_or_create_collection(name="research_knowledge_base")
 
@@ -106,7 +106,7 @@ def search_and_store(topic: str, num_results: int = 5) -> int:
     print(f'\n🔍 Searching the web for: "{topic}"')
     print("─" * 55)
 
-    # Tavily returns clean article text — no HTML tags,
+    # Tavily returns clean article text - no HTML tags,
     # no nav menus, just the actual content
     results = tavily.search(
         query=topic,

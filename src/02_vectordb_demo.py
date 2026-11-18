@@ -1,5 +1,5 @@
 """
-STEP 2 — Vector Database Demo (ChromaDB)
+STEP 2 - Vector Database Demo (ChromaDB)
 =========================================
 What this file does:
   - Takes 5 fake "research article" chunks
@@ -8,7 +8,7 @@ What this file does:
   - ChromaDB finds and returns the most relevant chunks
 
 This is the RETRIEVAL part of RAG.
-The LLM hasn't appeared yet — this is purely about
+The LLM hasn't appeared yet - this is purely about
 finding the right information before we answer anything.
 
 Run it with:
@@ -44,7 +44,7 @@ def embed_text(text: str) -> list[float]:
 # SET UP CHROMADB
 # ─────────────────────────────────────────────
 # ChromaDB is a local database that runs on your machine.
-# "persistent" means it saves to disk — if you restart
+# "persistent" means it saves to disk - if you restart
 # your script, the data is still there.
 #
 # A "collection" is like a table in a normal database.
@@ -76,7 +76,7 @@ print("\n✅ ChromaDB collection created\n")
 # Each chunk has:
 #   - an id     (unique label)
 #   - text      (the actual content)
-#   - metadata  (where it came from — useful for citations)
+#   - metadata  (where it came from - useful for citations)
 
 chunks = [
     {
@@ -140,7 +140,7 @@ print(f"\n✅ {len(chunks)} chunks stored in ChromaDB\n")
 
 
 # ─────────────────────────────────────────────
-# NOW QUERY — ask a question and find relevant chunks
+# NOW QUERY - ask a question and find relevant chunks
 # ─────────────────────────────────────────────
 # Steps:
 #   1. Embed the question (same way as the chunks)

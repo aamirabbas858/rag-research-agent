@@ -5,7 +5,7 @@ stored, or stop and answer.**
 
 Not a chatbot with retrieval bolted on. The model is given three tools and a running
 history, and at each step it chooses what to do next. The interesting part isn't
-getting it to act — it's getting it to **stop**.
+getting it to act - it's getting it to **stop**.
 
 ![Stack](https://img.shields.io/badge/Python-3.11+-blue) ![Stack](https://img.shields.io/badge/Mistral-API-orange) ![Stack](https://img.shields.io/badge/ChromaDB-vector%20store-green) ![Stack](https://img.shields.io/badge/Tavily-web%20search-purple)
 
@@ -43,7 +43,7 @@ the wording sharpens as they run out:
 urgency = (
     " YOU MUST call final_answer NOW with what you have."
     if steps_left <= 2 else
-    f" ({steps_left} steps remaining — plan to call final_answer soon.)"
+    f" ({steps_left} steps remaining - plan to call final_answer soon.)"
 )
 ```
 
@@ -66,7 +66,7 @@ then `gemini-flash-latest`, so a single unavailable model doesn't kill the run.
 instead of raising.
 
 **History is trimmed.** Tool results are cut to 400 characters before going into the
-history — the agent needs to know *what happened*, not re-read whole articles every
+history - the agent needs to know *what happened*, not re-read whole articles every
 step. Without this the context grows until the run fails.
 
 ## The UI
@@ -107,11 +107,11 @@ both are free without a card:
 
 | | |
 |---|---|
-| `NVIDIA_API_KEY` | [build.nvidia.com](https://build.nvidia.com) — tried first |
-| `MISTRAL_API_KEY` | [console.mistral.ai](https://console.mistral.ai) — phone verification |
+| `NVIDIA_API_KEY` | [build.nvidia.com](https://build.nvidia.com) - tried first |
+| `MISTRAL_API_KEY` | [console.mistral.ai](https://console.mistral.ai) - phone verification |
 
 `GEMINI_API_KEY` still works as a fallback if you have one. The agent uses the
-first provider with a key present and only fails when none answer — this
+first provider with a key present and only fails when none answer - this
 project ran on Gemini alone until its balance emptied, at which point every
 request returned RESOURCE_EXHAUSTED and nothing worked. Nothing about the
 agent was wrong; it just had exactly one provider.
@@ -120,7 +120,7 @@ agent was wrong; it just had exactly one provider.
 
 The hand-written version is a `for` loop with the decision, the tool call, the
 step budget and the transcript interleaved. Everything is visible in the order
-it happens, which is genuinely easier to read — and it also means those four
+it happens, which is genuinely easier to read - and it also means those four
 concerns cannot be changed independently.
 
 The LangGraph version separates them into nodes over a shared state:
@@ -139,7 +139,7 @@ is more files, more concepts and a dependency that moves quickly, in exchange
 for structure the eighty-line version did not need.
 
 What it buys is what comes next. The agent's whole memory is now a value
-rather than local variables inside one function — so it can be inspected,
+rather than local variables inside one function - so it can be inspected,
 logged, saved between runs, or handed to a second agent. Persistence,
 resuming a half-finished research session, and a human approval step before an
 expensive tool are all hard to bolt onto a `for` loop and close to free on a
@@ -153,7 +153,7 @@ The graph has tests the loop never had, and they run without a model:
 venv/bin/python tests/test_agent_graph.py
 ```
 
-Six checks on control flow — that a tool result loops back for another
+Six checks on control flow - that a tool result loops back for another
 decision, that `final_answer` ends the run, that an invented tool name is an
 error rather than a crash, that a failing tool is reported to the model
 instead of ending the run, and that the step budget stops an agent which never
@@ -171,7 +171,7 @@ and free.
 - Chunking is fixed-size with overlap, not semantic.
 - **Switching embedding model invalidates the store.** Vectors from two models
   have different lengths and different meanings, and querying across them does
-  not error — it silently returns the wrong chunks and the answer on top looks
+  not error - it silently returns the wrong chunks and the answer on top looks
   fine. The collection name carries the model for that reason, so changing it
   gives a fresh collection rather than a corrupted one.
 
@@ -192,4 +192,4 @@ Switch with `AGENT_IMPL=manual` or `AGENT_IMPL=graph` (the default).
 
 ---
 
-Built by [Abbas Aamir](https://www.linkedin.com/in/abbas-aamir-474969353/) — CS undergraduate in Berlin.
+Built by [Abbas Aamir](https://www.linkedin.com/in/abbas-aamir-474969353/) - CS undergraduate in Berlin.

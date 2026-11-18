@@ -1,5 +1,5 @@
 """
-agent_graph.py — the same ReAct loop, as a LangGraph state machine
+agent_graph.py - the same ReAct loop, as a LangGraph state machine
 ==================================================================
 
 `agent_manual.py` does exactly this in one function. Both are kept so they can
@@ -9,7 +9,7 @@ be read against each other.
 
 The hand-written version is a `for` loop with the decision, the tool call, the
 step budget and the transcript all interleaved. Everything is visible in the
-order it happens, which is genuinely easier to follow — and it also means those
+order it happens, which is genuinely easier to follow - and it also means those
 four concerns cannot be changed independently.
 
 Here they are separate nodes over a shared state:
@@ -25,7 +25,7 @@ nothing has to remember to decrement it.
 
 More files, more concepts, and a dependency that moves quickly. For a loop this
 small the framework is not obviously worth it; the reason to reach for it is
-what comes next — persistence between runs, resuming a half-finished research
+what comes next - persistence between runs, resuming a half-finished research
 session, a human approval step before an expensive tool, or two agents sharing
 state. Those are hard to bolt onto a `for` loop and close to free here.
 
@@ -100,7 +100,7 @@ def _parse(raw: str) -> dict:
     Usually is not always: it fences the block, or adds a sentence before it.
     Rather than fail the run, find the outermost braces. This is the same
     forgiveness the hand-written version has, and it is needed just as much
-    here — a framework does not make a model more obedient.
+    here - a framework does not make a model more obedient.
     """
     clean = raw.strip().strip("```json").strip("```").strip()
     try:
@@ -156,7 +156,7 @@ def act(state: AgentState) -> dict:
         observation, sources = runner(**args)
     except Exception as e:  # noqa: BLE001
         # A failing tool is information, not a crash. The model gets told and
-        # can choose differently on the next turn — which is exactly the sort
+        # can choose differently on the next turn - which is exactly the sort
         # of recovery a fixed script cannot do.
         return {"observation": f"Tool {tool} failed: {e}", "sources": []}
 
@@ -179,7 +179,7 @@ def next_move(state: AgentState) -> Literal["record", "__end__"]:
     Carry on, or stop.
 
     Three ways to stop: an answer, an error, or running out of steps. The last
-    one matters — without a budget a model that keeps deciding to search will
+    one matters - without a budget a model that keeps deciding to search will
     search forever, and the bill is real.
     """
     if state.get("error") or state.get("answer"):
@@ -258,7 +258,7 @@ def run_agent(question: str):
                 if delta.get("observation"):
                     yield {"type": "result", "content": delta["observation"]}
 
-    # Fell out of the loop without an answer — the step budget ran out.
+    # Fell out of the loop without an answer - the step budget ran out.
     yield {
         "type": "error",
         "message": f"Stopped after {MAX_STEPS} steps without reaching an answer.",

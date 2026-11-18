@@ -1,5 +1,5 @@
 """
-providers.py — where the model calls actually go.
+providers.py - where the model calls actually go.
 
 
 
@@ -15,7 +15,7 @@ Adding a third is an environment variable rather than a code change.
 Swapping the chat model changes the wording of an answer. Swapping the
 EMBEDDING model invalidates every vector already stored: the numbers mean
 different things and are usually a different length. Querying a store built
-with one model using vectors from another does not raise an error — it
+with one model using vectors from another does not raise an error - it
 quietly returns the wrong chunks, and the answer on top of them looks fine.
 
 Which is why the collection name carries the embedding model. Change the
@@ -35,7 +35,7 @@ def _key(name: str) -> str | None:
 
     Reading os.getenv alone is not enough. On Streamlit Cloud, secrets live in
     st.secrets, and relying on them also appearing as environment variables is
-    an assumption — one that produced "No provider configured" on a deployment
+    an assumption - one that produced "No provider configured" on a deployment
     where the key was set correctly the whole time.
 
     streamlit is imported lazily and inside a try, because this module is also
@@ -44,7 +44,7 @@ def _key(name: str) -> str | None:
     """
     # Stripped, always. A key pasted into a secrets box or an .env file
     # routinely carries a trailing newline or space, and it goes straight into
-    # an Authorization header — where "Bearer key\n" is rejected as 403
+    # an Authorization header - where "Bearer key\n" is rejected as 403
     # Forbidden, indistinguishable from a genuinely invalid key. The character
     # doing the damage is invisible in every UI that shows it back to you.
     value = os.getenv(name)
@@ -77,7 +77,7 @@ class NoProviderConfigured(RuntimeError):
 
     The message names what was looked for and where, because the version that
     just said "no provider configured" sent someone checking a secret that was
-    already set correctly. It reports presence only — never a key, never a
+    already set correctly. It reports presence only - never a key, never a
     prefix, never a length.
     """
 
@@ -104,7 +104,7 @@ class NoProviderConfigured(RuntimeError):
 def _nvidia_chat(prompt: str) -> str:
     """NVIDIA NIM, OpenAI-compatible, streamed.
 
-    Streaming is not a nicety here — it is the fix. A non-streamed request
+    Streaming is not a nicety here - it is the fix. A non-streamed request
     returns the whole completion in one response, so the read timeout has to
     cover the entire generation. On a busy free endpoint that regularly exceeds
     90 seconds, and the failure arrives as "Read timed out" with no clue that
@@ -220,7 +220,7 @@ def call_llm(prompt: str) -> str:
             continue
         try:
             return fn(prompt)
-        except Exception as e:  # noqa: BLE001 — the next provider is the handler
+        except Exception as e:  # noqa: BLE001 - the next provider is the handler
             errors.append(f"{name}: {e}")
 
     if not errors:
@@ -238,7 +238,7 @@ def embed_text(text: str, kind: str = "passage") -> list[float]:
 
     `kind` is "passage" for text being stored and "query" for a question being
     asked. NVIDIA's retrieval embedders are trained asymmetrically and expect
-    to be told which — passing the wrong one costs real retrieval quality and
+    to be told which - passing the wrong one costs real retrieval quality and
     reports no error at all. The other providers ignore it.
 
     No failover here, deliberately. Falling back to a different embedding

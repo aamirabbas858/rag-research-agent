@@ -1,11 +1,11 @@
 """
-agent_manual.py — the ReAct loop, written by hand
+agent_manual.py - the ReAct loop, written by hand
 ==================================================
 The original implementation, kept deliberately.
 
 agent_graph.py does the same job with LangGraph. Both are here so the two can
 be read side by side: this file is the whole loop in one function, and that is
-its advantage — everything that happens is visible in the order it happens.
+its advantage - everything that happens is visible in the order it happens.
 Its disadvantage is that the loop, the retry, the step budget and the
 transcript are all tangled together in that same function.
 
@@ -35,7 +35,7 @@ tavily = TavilyClient(api_key=TAVILY_API_KEY)
 db_client = chromadb.EphemeralClient()
 # The embedding model is part of the collection name on purpose. Vectors from
 # two different models have different lengths and different meanings, and
-# mixing them does not raise — it silently retrieves the wrong chunks. Changing
+# mixing them does not raise - it silently retrieves the wrong chunks. Changing
 # the model gives a fresh collection rather than a corrupted one.
 collection = db_client.get_or_create_collection(name=f"app_kb_{EMBED_MODEL}")
 
@@ -88,7 +88,7 @@ def tool_query_knowledge_base(question: str) -> tuple[str, list[dict]]:
     if collection.count() == 0:
         return "Knowledge base is empty. Search the web first.", []
     results = collection.query(
-        # A question, not a stored chunk — NVIDIA's retriever is trained
+        # A question, not a stored chunk - NVIDIA's retriever is trained
         # asymmetrically and gives worse results if told the wrong one.
         query_embeddings=[embed_text(question, kind="query")],
         n_results=4,

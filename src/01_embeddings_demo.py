@@ -1,5 +1,5 @@
 """
-STEP 1 — Embeddings Demo
+STEP 1 - Embeddings Demo
 ========================
 What this file does:
   - Takes 4 sentences
@@ -27,7 +27,7 @@ GEMINI_API_KEY = os.getenv("GEMINI_API_KEY")
 # ─────────────────────────────────────────────
 # This calls the Gemini API and asks it to convert
 # one sentence into a list of numbers.
-# The model we use is "text-embedding-004" — a model
+# The model we use is "text-embedding-004" - a model
 # trained specifically to produce embeddings.
 # It outputs 3072 numbers per sentence.
 
@@ -58,7 +58,7 @@ def embed_text(text: str) -> list[float]:
 # Score = 0.0  → completely unrelated
 #
 # The formula: dot(A, B) / (magnitude(A) * magnitude(B))
-# You don't need to memorise this — it's a standard
+# You don't need to memorise this - it's a standard
 # maths tool for comparing vectors.
 
 def cosine_similarity(vec_a: list[float], vec_b: list[float]) -> float:
@@ -74,12 +74,12 @@ def cosine_similarity(vec_a: list[float], vec_b: list[float]) -> float:
 # Pair A: sentence 0 and 1 mean basically the same thing
 #         (dog/puppy, chased/ran after, cat/kitten)
 # Pair B: sentence 2 is completely unrelated (finance)
-# Pair C: sentence 3 is about ML — related to what we're building
+# Pair C: sentence 3 is about ML - related to what we're building
 
 sentences = [
     "The dog chased the cat up the tree",       # 0
-    "A puppy ran after a kitten",               # 1 — similar to 0
-    "Interest rates rose sharply in Q3",        # 2 — unrelated
+    "A puppy ran after a kitten",               # 1 - similar to 0
+    "Interest rates rose sharply in Q3",        # 2 - unrelated
     "Machine learning models learn from data",  # 3
 ]
 
@@ -98,7 +98,7 @@ embeddings = []
 for i, sentence in enumerate(sentences):
     vec = embed_text(sentence)
     embeddings.append(vec)
-    # Show only the first 6 numbers — each embedding is 768 numbers long
+    # Show only the first 6 numbers - each embedding is 768 numbers long
     preview = [round(n, 4) for n in vec[:6]]
     print(f'  [{i}] "{sentence}"')
     print(f'       → [{", ".join(str(n) for n in preview)}, ...]')

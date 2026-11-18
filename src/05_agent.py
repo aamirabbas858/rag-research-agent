@@ -1,5 +1,5 @@
 """
-STEP 5 — The Research Agent
+STEP 5 - The Research Agent
 =============================
 What this file does:
   - Gives Gemini a set of TOOLS it can call
@@ -9,9 +9,9 @@ What this file does:
   - Returns a cited answer grounded in real web content
 
 The three tools the agent has:
-  1. search_web(query)         — search Tavily, store results in ChromaDB
-  2. query_knowledge_base(q)   — retrieve relevant chunks from ChromaDB
-  3. final_answer(answer)      — agent is done, this is the answer
+  1. search_web(query) - search Tavily, store results in ChromaDB
+  2. query_knowledge_base(q) - retrieve relevant chunks from ChromaDB
+  3. final_answer(answer) - agent is done, this is the answer
 
 Run it with:
   venv/bin/python src/05_agent.py
@@ -30,7 +30,7 @@ TAVILY_API_KEY = os.getenv("TAVILY_API_KEY")
 
 tavily = TavilyClient(api_key=TAVILY_API_KEY)
 
-# ChromaDB — persistent knowledge base
+# ChromaDB - persistent knowledge base
 db_path = os.path.join(os.path.dirname(__file__), "..", "data", "chroma_agent")
 db_client = chromadb.PersistentClient(path=db_path)
 collection = db_client.get_or_create_collection(name="agent_knowledge_base")
@@ -183,7 +183,7 @@ def run_agent(user_question: str) -> str:
     print(f"  Question: {user_question}")
     print("=" * 60)
 
-    # conversation history — grows with each step
+    # conversation history - grows with each step
     history = f"User question: {user_question}\n\nSteps taken so far:\n"
 
     for step in range(1, 9):
@@ -200,7 +200,7 @@ def run_agent(user_question: str) -> str:
         # Ask Gemini what to do
         raw_response = call_gemini(prompt)
 
-        # Gemini should return pure JSON — strip any accidental formatting
+        # Gemini should return pure JSON - strip any accidental formatting
         clean = raw_response.strip().strip("```json").strip("```").strip()
 
         try:
@@ -236,7 +236,7 @@ def run_agent(user_question: str) -> str:
         print(f"     📋 Result: {result[:120]}...")
 
         # Add this step to history so Gemini remembers it.
-        # Trim the result to 400 chars — Gemini only needs to know
+        # Trim the result to 400 chars - Gemini only needs to know
         # what happened, not the full article content in the history.
         result_summary = result[:400] + "..." if len(result) > 400 else result
         history += (

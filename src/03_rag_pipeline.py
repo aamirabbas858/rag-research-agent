@@ -1,5 +1,5 @@
 """
-STEP 3 — The Full RAG Pipeline
+STEP 3 - The Full RAG Pipeline
 ================================
 What this file does:
   - Stores 6 chunks in ChromaDB (same as Step 2)
@@ -171,7 +171,7 @@ def rag_answer(question: str) -> None:
     print(f"❓ Question: {question}")
     print("─" * 60)
 
-    # STEP R — Retrieve
+    # STEP R - Retrieve
     question_embedding = embed_text(question)
     results = collection.query(
         query_embeddings=[question_embedding],
@@ -185,7 +185,7 @@ def rag_answer(question: str) -> None:
     for i, (chunk, meta) in enumerate(zip(retrieved_chunks, retrieved_sources), 1):
         print(f"  [{i}] {meta['source']}: \"{chunk[:70]}...\"")
 
-    # STEP A — Augment: build the prompt with context
+    # STEP A - Augment: build the prompt with context
     # We number each source so Gemini can reference them in its answer
     context_block = ""
     for i, (chunk, meta) in enumerate(zip(retrieved_chunks, retrieved_sources), 1):
@@ -204,7 +204,7 @@ def rag_answer(question: str) -> None:
         f"Question: {question}"
     )
 
-    # STEP G — Generate
+    # STEP G - Generate
     print("\n🤖 Gemini's answer (grounded in retrieved chunks):\n")
     answer = ask_gemini(system_prompt, user_prompt)
     print(f"  {answer}")
@@ -215,7 +215,7 @@ def rag_answer(question: str) -> None:
 # ─────────────────────────────────────────────
 # Question 1: answerable from the knowledge base
 # Question 2: also answerable
-# Question 3: NOT in the knowledge base — should get "I don't know"
+# Question 3: NOT in the knowledge base - should get "I don't know"
 
 rag_answer("What is RAG and why is it useful?")
 rag_answer("What kind of tech companies are based in Berlin?")

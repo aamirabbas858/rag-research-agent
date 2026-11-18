@@ -1,5 +1,5 @@
 """
-app.py — RAG Research Agent — Streamlit UI
+app.py - RAG Research Agent - Streamlit UI
 ===========================================
 Run with:
   venv/bin/python -m streamlit run app.py

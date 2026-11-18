@@ -4,7 +4,7 @@ The graph's control flow, without calling a model.
     venv/bin/python tests/test_agent_graph.py
 
 The model and the tools are stubbed on purpose. What is being tested is the
-part LangGraph is responsible for — that `decide` leads to `act`, that a
+part LangGraph is responsible for - that `decide` leads to `act`, that a
 tool result loops back for another decision, that `final_answer` ends the
 run, and that the step budget stops a model which never decides to finish.
 
